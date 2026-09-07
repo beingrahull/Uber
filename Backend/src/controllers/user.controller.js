@@ -80,7 +80,7 @@ async function loginuser(req,res){
 
     const token=await jwt.sign({id:isMatch._id},process.env.JWT_SECRET)
 
-    res.cookie("Access_Token",token)
+    res.cookie("UserAccess_Token",token)
 
     return res.status(201).json({message:"Login Successful"})
 
@@ -98,8 +98,8 @@ async function userProfile(req,res) {
 }
 
 async function logoutuser(req,res) {
-    res.clearCookie("Access_Token")
-    const logout_token = req.cookies.Access_Token || req.headers.authorization?.split(" ") [ 1 ]
+    res.clearCookie("UserAccess_Token")
+    const logout_token = req.cookies.UserAccess_Token || req.headers.authorization?.split(" ") [ 1 ]
     const logout_data= await BlacklistModel.create({token:logout_token})
     return res.status(201).json({message:"Logged out"}) 
 }
