@@ -28,6 +28,7 @@ router.post("/login",[
 
 router.get("/user-profile", authMiddleware.LoginValidation,RegisterUser.userProfile )
 
+router.get("/logout", authMiddleware.LoginValidation,RegisterUser.logoutuser)
 
 
 module.exports=router

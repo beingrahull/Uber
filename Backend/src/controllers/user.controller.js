@@ -2,6 +2,7 @@ const userModel=require("../models/user.model")
 const RegistrationService=require("../services/user.service")
 const {validationResult} = require("express-validator")
 const jwt=require("jsonwebtoken")
+const BlacklistModel=require("../models/blacklist.model")
 
 
 
@@ -96,4 +97,11 @@ async function userProfile(req,res) {
     })
 }
 
-module.exports={registerUser , loginuser, userProfile}
+async function logoutuser(req,res) {
+    res.clearCookie("Access_Token")
+    const logout_token = req.cookies.Access_Token || req.headers.authorization?.split(" ") [ 1 ]
+    const logout_data= await BlacklistModel.create({token:logout_token})
+    return res.status(201).json({message:"Logged out"}) 
+}
+
+module.exports={registerUser , loginuser, userProfile, logoutuser}
