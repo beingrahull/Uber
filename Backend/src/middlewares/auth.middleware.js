@@ -38,21 +38,31 @@ async function LoginValidation(req,res,next) {
 
 
 async function CaptainLoginValidation(req,res,next) {
-    const token = req.cookies.CaptainAccess_Token || req.header.Authorization?.split(" ")
+    const authHeader = req.header("Authorization");
+
+    const token =req.cookies.CaptainAccess_Token ||(authHeader && authHeader.startsWith("Bearer ")? authHeader.split(" ") [1] : null)
+
     if (!token) {
         return res.status(401).json({message:"Unauthorized Access"})
     }
 
-    const blacklisted = await BlacklistModel.findOne({token:token})
-
-    if (blacklisted) {
-        return res.status(401).json({message:"Unauthorized"})
-    }
-
     try{
+        const blacklisted = await BlacklistModel.findOne({token:token})
+
+        if (blacklisted) {
+            return res.status(401).json({message:"Unauthorized"})
+        }
+
         const decoder = jwt.verify(token,process.env.JWT_SECRET)
-        const Captain= await captainModel.findOne({_id:decoder.id})
+
+        const Captain= await captainModel.findOne({_id:decoder._id})
+        
+        if (!Captain) {
+            return res.status(401).json({message:"Captain Not found"})
+        }
+
         req.user = Captain
+
         next()
     }catch(error){
         return res.status(401).json({message:"Token Compromised"})

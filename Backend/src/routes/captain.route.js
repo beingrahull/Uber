@@ -6,6 +6,10 @@ const route=express.Router()
 
 
 route.post("/register-captain",CaptainController.registernewCaptain)
+
 route.post("/login-captain",CaptainController.login)
 
+route.get("/captain-profile",CaptainAuthentication.CaptainLoginValidation, CaptainController.captainprofile)
+
+route.get("/logout-captain",CaptainAuthentication.CaptainLoginValidation, CaptainController.captainlogout)
 module.exports=route

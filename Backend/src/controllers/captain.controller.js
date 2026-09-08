@@ -72,4 +72,28 @@ async function login(req,res){
 
 }
 
-module.exports={registernewCaptain,login}
+
+async function captainprofile(req,res) {
+    const captainData = req.user
+
+    if (!captainData) {
+        return res.status(401).json({Profile:"Failed to fetch. Try again"
+        })
+    }
+
+    return res.status(201).json({message:"Profile Fetched",
+        Profile: captainData
+    })
+
+}
+
+async function captainlogout(req,res) {
+    const token = req.cookies.CaptainAccess_Token || req.header.Authorization?.split(" ") [1]
+    const logoutCaptain = await blacklistModel.create({token:token})
+    
+    res.clearCookie("CaptainAccess_Token")
+
+    return res.status(201).json({Status:"Logout Successful"})
+}
+
+module.exports={registernewCaptain,login,captainprofile,captainlogout}
