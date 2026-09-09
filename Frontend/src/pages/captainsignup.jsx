@@ -105,6 +105,8 @@ const CaptainSignup = () => {
             className="bg-[#eeeeee] mb-5 rounded px-4 py-2 border w-full text-lg placeholder:text-base focus:outline-none focus:border-black"
           />
 
+          
+
           <h3 className="text-lg font-medium mb-2">Mobile Number</h3>
           <input
             required
