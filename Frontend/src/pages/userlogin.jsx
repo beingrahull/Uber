@@ -1,38 +1,35 @@
 import React, { useState, useContext } from 'react'
-import { Link } from "react-router-dom" 
+import { Link, useNavigate } from "react-router-dom"
+import { UserDataContext } from '../context/UserContext'
+import axios from 'axios'
 
 const UserLogin = () => {
+
+  const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mobilenumber, setmobilenumber] = useState('')
   const [mobileError, setMobileError] = useState('')
   const [passwordError, setPasswordError] = useState('')
-  const [UserData, setUserData] = useState({})
+  const { user, setUser } = useContext(UserDataContext)
 
   const handleMobileChange = (e) => {
     const value = e.target.value
-    // Only allow digits
     const digitsOnly = value.replace(/\D/g, '')
     setmobilenumber(digitsOnly)
-    // Clear error when user starts typing again
-    if (mobileError) {
-      setMobileError('')
-    }
+    if (mobileError) setMobileError('')
   }
 
   const handlePasswordChange = (e) => {
     setPassword(e.target.value)
-    // Clear error when user starts typing again
-    if (passwordError) {
-      setPasswordError('')
-    }
+    if (passwordError) setPasswordError('')
   }
 
   const submitHandler = async (e) => {
     e.preventDefault()
 
-    // Validate mobile number
+    // Validate mobile number (UI only — not sent to backend)
     if (mobilenumber.length !== 10) {
       setMobileError('Mobile number must be exactly 10 digits')
       return
@@ -44,13 +41,27 @@ const UserLogin = () => {
       return
     }
 
-    const UserData={
-      email:email,
-      password:password,
-      mobilenumber:mobilenumber
+    // ✅ Backend only reads email + password
+    const payload = { email, password }
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/user/login`,
+        payload,
+        { withCredentials: true }
+      )
+
+      if (response.status === 200) {
+        const data = response.data
+        setUser(data.user)
+        localStorage.setItem('token', data.token)
+        navigate('/home')
+      }
+    } catch (error) {
+      console.error("Login failed:", error.response?.data || error.message)
+      setPasswordError(error.response?.data?.message || 'Login failed')
     }
 
-    console.log(UserData)
     setEmail('')
     setPassword('')
     setmobilenumber('')
@@ -60,31 +71,27 @@ const UserLogin = () => {
 
   return (
     <div className="p-7 min-h-screen w-full flex flex-col justify-between bg-white">
-      {/* Main content - takes available space and pushes button down */}
       <div className="flex-1 flex flex-col justify-center">
         <div className="w-full max-w-md mx-auto">
-          {/* Logo - positioned more like Uber's official layout */}
-          <img 
-            className='w-16 mb-8 ml-0' 
-            src='https://logos-world.net/wp-content/uploads/2020/05/Uber-Logo-700x394.png' 
+          <img
+            className='w-16 mb-8 ml-0'
+            src='https://logos-world.net/wp-content/uploads/2020/05/Uber-Logo-700x394.png'
             alt="Uber Logo"
           />
 
-          <form onSubmit={(e) => {
-            submitHandler(e)
-          }}>
+          <form onSubmit={submitHandler}>
             <h1 className="text-2xl font-semibold mb-6">Getting Started</h1>
 
             <h2 className="text-base font-medium mb-2">What's your email?</h2>
-            <input 
-              type="email" 
-              placeholder="email@example.com" 
-              required 
+            <input
+              type="email"
+              placeholder="email@example.com"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-[#eeeeee] mb-5 rounded-lg px-4 py-3 border w-full text-base placeholder:text-base focus:outline-none focus:border-black transition-colors"
             />
-            
+
             <h2 className="text-base font-medium mb-2">Mobile Number</h2>
             <input
               required
@@ -97,9 +104,7 @@ const UserLogin = () => {
               }`}
             />
             {mobileError && (
-              <p className="text-red-500 text-sm mt-1 mb-4">
-                {mobileError}
-              </p>
+              <p className="text-red-500 text-sm mt-1 mb-4">{mobileError}</p>
             )}
 
             <h2 className="text-base font-medium mb-2">Password</h2>
@@ -114,9 +119,7 @@ const UserLogin = () => {
               }`}
             />
             {passwordError && (
-              <p className="text-red-500 text-sm mt-1 mb-4">
-                {passwordError}
-              </p>
+              <p className="text-red-500 text-sm mt-1 mb-4">{passwordError}</p>
             )}
 
             <button
@@ -126,17 +129,16 @@ const UserLogin = () => {
               Login
             </button>
           </form>
-          
+
           <p className="text-center mb-6 text-sm">
             New here? <Link to="/user-signup" className='text-blue-600 font-medium hover:underline'>Create an Account</Link>
           </p>
         </div>
       </div>
 
-      {/* Bottom section - Login as Captain button */}
       <div className="w-full max-w-md mx-auto">
-        <Link 
-          to="/captain-login" 
+        <Link
+          to="/captain-login"
           className='bg-[#d5622d] flex items-center justify-center text-white font-semibold rounded-lg px-4 py-3 w-full text-base hover:bg-[#c45528] transition-colors'
         >
           Login as Captain

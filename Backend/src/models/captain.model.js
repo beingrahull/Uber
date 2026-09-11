@@ -11,6 +11,7 @@ const CaptainSchema = new mongoose.Schema({
         },
         lastname:{
             type:String,
+            default:"",
             minlength:[3, "Lastname should be atleast 3 characters long"]
         }
     },
@@ -23,7 +24,7 @@ const CaptainSchema = new mongoose.Schema({
     mobileNo:{
         type:String,
         required:true,
-        uniqie:true
+        unique:true
     },
     password:{
         type:String,

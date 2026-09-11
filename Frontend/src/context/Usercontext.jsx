@@ -1,28 +1,25 @@
-import React, { createContext, useState } from 'react' // 1. Added missing imports
+import React, { createContext, useState } from 'react'
 
-// 2. Created and exported the context object cleanly
-export const UserContextProvider = createContext()
+export const UserDataContext = createContext()
 
-const Usercontext = ({ children }) => {
 
-  // 3. FIXED: Correct array destructuring structure for useState hook
-  const [credData, setCredData] = useState({
-    email: '',
-    mobileNo: '',
-    fullname: {
-      firstname: '',
-      lastname: ''
-    }
-  });
+const UserContext = ({ children }) => {
 
-  return (
-    <div>
-      {/* 4. FIXED: Passed both state value and setter function down inside an object wrapper */}
-      <UserContextProvider.Provider value={{ credData, setCredData }}>
-        {children}
-      </UserContextProvider.Provider>
-    </div>
-  )
+    const [ user, setUser ] = useState({
+        email: '',
+        fullName: {
+            firstName: '',
+            lastName: ''
+        }
+    })
+
+    return (
+        <div>
+            <UserDataContext.Provider value={{ user, setUser }}>
+                {children}
+            </UserDataContext.Provider>
+        </div>
+    )
 }
 
-export default Usercontext
+export default UserContext

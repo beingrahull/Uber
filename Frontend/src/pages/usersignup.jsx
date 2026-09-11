@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react'; // 1. FIXED: Imported useContext
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { UserDataContext } from '../context/UserContext'; 
 
 const UserSignup = () => {
   const navigate = useNavigate();
@@ -9,70 +11,77 @@ const UserSignup = () => {
   const [email, setEmail] = useState('');
   const [mobileNo, setMobileNo] = useState('');
   const [password, setPassword] = useState('');
-  const [submittedData, setSubmittedData] = useState(null);
   
   // Error states
   const [mobileError, setMobileError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // 3. FIXED: Used the exact keys exported by your Context Provider (credData, setCredData)
+  const { user, setUser } = useContext(UserDataContext);
 
   // Handle mobile input - only digits
   const handleMobileChange = (e) => {
     const value = e.target.value;
     const digitsOnly = value.replace(/\D/g, '');
     setMobileNo(digitsOnly);
-    // Clear error when user starts typing again
-    if (mobileError) {
-      setMobileError('');
-    }
+    if (mobileError) setMobileError('');
   };
 
-  // Handle password change - clear error when typing
+  // Handle password change
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
-    if (passwordError) {
-      setPasswordError('');
-    }
+    if (passwordError) setPasswordError('');
   };
 
-  const submitHandler = (e) => {
+  // 4. FIXED: Marked handler as async to process network calls correctly
+  const submitHandler = async (e) => {
     e.preventDefault();
 
-    // Validate mobile number
     if (mobileNo.length !== 10) {
       setMobileError('Mobile number must be exactly 10 digits');
       return;
     }
 
-    // Validate password
     if (password.length < 8) {
       setPasswordError('Password must be at least 8 characters long');
       return;
     }
 
-    const userData = {
+    // UPDATED PAYLOAD: Providing properties for both validation AND service destructuring
+    const newUser = {
       fullname: {
         firstname,
         lastname,
       },
       email,
-      mobileNo,
+      mobileNumber: mobileNo,   
       password,
     };
 
-    setSubmittedData(userData);
-    console.log(userData);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/user/register`, newUser);
 
-    // Clear form
-    setFirstname('');
-    setLastname('');
-    setEmail('');
-    setMobileNo('');
-    setPassword('');
-    setMobileError('');
-    setPasswordError('');
+      if (response.status === 201) {
+        const data = response.data;
+        
+        setUser(data.userRecord);         
+        localStorage.setItem('token', data.token);
+        
+        // Clear form
+        setFirstname('');
+        setLastname('');
+        setEmail('');
+        setMobileNo('');
+        setPassword('');
+        localStorage.setItem('token', data.token)
 
-    
+        navigate('/home');
+      }
+    } catch (error) {
+      console.error("Signup failed:", error.response?.data || error.message);
+    }
   };
+
 
   return (
     <div className="p-7 min-h-screen flex flex-col justify-between bg-white">
@@ -128,9 +137,7 @@ const UserSignup = () => {
               }`}
             />
             {mobileError && (
-              <p className="text-red-500 text-sm mt-1 mb-4">
-                {mobileError}
-              </p>
+              <p className="text-red-500 text-sm mt-1 mb-4">{mobileError}</p>
             )}
 
             <h3 className="text-base font-medium mb-2">Enter Password</h3>
@@ -145,9 +152,7 @@ const UserSignup = () => {
               }`}
             />
             {passwordError && (
-              <p className="text-red-500 text-sm mt-1 mb-4">
-                {passwordError}
-              </p>
+              <p className="text-red-500 text-sm mt-1 mb-4">{passwordError}</p>
             )}
 
             <button

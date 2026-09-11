@@ -1,72 +1,65 @@
-const userModel=require("../models/user.model")
-const bcrypt=require("bcryptjs")
-const jwt=require("jsonwebtoken")
-const BlacklistModel=require("../models/blacklist.model")
-const captainModel=require("../models/captain.model")
+const userModel = require("../models/user.model");
+const jwt = require("jsonwebtoken");
+const BlacklistModel = require("../models/blacklist.model");
+const captainModel = require("../models/captain.model");
 
-async function LoginValidation(req,res,next) {
-    const token = req.cookies.UserAccess_Token || req.header('Authorization')
+async function LoginValidation(req, res, next) {
+    // ✅ strip "Bearer " right here, use let
+    let token =
+        req.cookies?.UserAccess_Token ||
+        req.header("Authorization")?.replace("Bearer ", "");
+
     if (!token) {
-        return res.status(400).json({message:"Unauthorized access"})
+        return res.status(401).json({ message: "Unauthorized access" });
     }
 
-    
-
-    try{
-        if (token.startsWith("Bearer ")) {
-            token = token.replace("Bearer ", "");
-        }
-
-
-        const checkBlacklist = await BlacklistModel.findOne({token:token})
-
+    try {
+        const checkBlacklist = await BlacklistModel.findOne({ token });
         if (checkBlacklist) {
-            return res.status(401).json({message:"Session expired. Please login again"})
+            return res.status(401).json({ message: "Session expired. Please login again" });
         }
-        const decoder =  jwt.verify(token,process.env.JWT_SECRET)
 
-        const userData = await userModel.findById(decoder.id || decoder._id)
+        const decoder = jwt.verify(token, process.env.JWT_SECRET);
+        const userData = await userModel.findById(decoder.id || decoder._id);
 
-        req.user = userData
+        if (!userData) {
+            return res.status(401).json({ message: "User not found" });
+        }
 
-        next()
-
-    }catch(error){
-        return res.status(401).json({message:"Conflicts in Token"})
+        req.user = userData;
+        return next();
+    } catch (error) {
+        return res.status(401).json({ message: "Conflicts in Token" });
     }
 }
 
-
-async function CaptainLoginValidation(req,res,next) {
-    const authHeader = req.header("Authorization");
-
-    const token =req.cookies.CaptainAccess_Token ||(authHeader && authHeader.startsWith("Bearer ")? authHeader.split(" ") [1] : null)
+async function CaptainLoginValidation(req, res, next) {
+    let token =
+        req.cookies?.CaptainAccess_Token ||
+        req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-        return res.status(401).json({message:"Unauthorized Access"})
+        return res.status(401).json({ message: "Unauthorized Access" });
     }
 
-    try{
-        const blacklisted = await BlacklistModel.findOne({token:token})
-
+    try {
+        const blacklisted = await BlacklistModel.findOne({ token });
         if (blacklisted) {
-            return res.status(401).json({message:"Unauthorized"})
+            return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoder = jwt.verify(token,process.env.JWT_SECRET)
+        const decoder = jwt.verify(token, process.env.JWT_SECRET);
+        const Captain = await captainModel.findById(decoder.id || decoder._id);
 
-        const Captain= await captainModel.findOne({_id:decoder._id})
-        
         if (!Captain) {
-            return res.status(401).json({message:"Captain Not found"})
+            return res.status(401).json({ message: "Captain Not found" });
         }
 
-        req.user = Captain
-
-        next()
-    }catch(error){
-        return res.status(401).json({message:"Token Compromised"})
+        req.user = Captain;
+        return next();
+    } catch (error) {
+        return res.status(401).json({ message: "Token Compromised" });
     }
 }
 
-module.exports={LoginValidation, CaptainLoginValidation}
+module.exports = { LoginValidation, CaptainLoginValidation };

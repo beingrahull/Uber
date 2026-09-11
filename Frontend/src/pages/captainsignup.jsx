@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -9,15 +10,12 @@ const CaptainSignup = () => {
   const [email, setEmail] = useState('');
   const [mobilenumber, setMobilenumber] = useState('');
   const [password, setPassword] = useState('');
-
   const [plate, setPlate] = useState('');
   const [colour, setColour] = useState('');
   const [model, setModel] = useState('');
-
   const [vehicleType, setVehicleType] = useState('Cab');
   const [capacity, setCapacity] = useState(4);
-  const [submittedData, setSubmittedData] = useState(null);
-  const [error, setError] = useState(''); // for validation errors
+  const [error, setError] = useState('');
 
   const vehicleOptions = [
     { id: 'Cab', label: 'Cab', cap: 4 },
@@ -25,43 +23,52 @@ const CaptainSignup = () => {
     { id: 'Auto', label: 'Auto', cap: 3 },
   ];
 
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
-    setError(''); // clear previous errors
+    setError('');
 
-    // Validate mobile number: exactly 10 digits
     if (!/^\d{10}$/.test(mobilenumber)) {
       setError('Mobile number must be exactly 10 digits.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
     const captainData = {
       fullname: { firstname, lastname },
       email,
-      mobilenumber,
+      mobileNo: mobilenumber,
       password,
       plate,
       colour,
       model,
       vehicleType,
-      capacity: Number(capacity),
+      capacity: Number(capacity)
     };
 
-    setSubmittedData(captainData);
-    console.log('Captain Data:', captainData);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/captain/register-captain`,
+        captainData,
+        { withCredentials: true }
+      );
 
-    // Reset form
-    setFirstname('');
-    setLastname('');
-    setEmail('');
-    setMobilenumber('');
-    setPassword('');
-    setPlate('');
-    setColour('');
-    setModel('');
-    setVehicleType('Cab');
-    setCapacity(4);
-
+      if (response.status === 201) {
+        const data = response.data;
+        if (data.token) {
+          localStorage.setItem('captainToken', data.token);
+        }
+        navigate('/captain-home');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message
+        || err.response?.data?.error
+        || 'Registration failed';
+      setError(msg);
+      console.error("Captain signup failed:", err.response?.data || err.message);
+    }
   };
 
   return (
@@ -204,8 +211,6 @@ const CaptainSignup = () => {
             Register as Captain
           </button>
         </form>
-
-        
 
         <p className="text-center mb-6">
           Already have a Captain account?{' '}
